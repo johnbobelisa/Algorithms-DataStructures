@@ -32,7 +32,9 @@ class TestTrailMethods(unittest.TestCase):
         self.assertIsInstance(res1.following.store, TrailSplit)
         self.assertEqual(res1.following.store.path_bottom.store, None)
         self.assertEqual(res1.following.store.path_top.store, None)
-        self.assertEqual(res1.following.store.path_follow.store, None)
+        self.assertIsInstance(res1.following.store.path_follow.store, TrailSeries)
+        self.assertEqual(res1.following.store.path_follow.store.mountain, d)
+        self.assertEqual(res1.following.store.path_follow.store.following.store, None)
 
         res2 = split.remove_branch()
         self.assertIsInstance(res2, TrailSeries)
