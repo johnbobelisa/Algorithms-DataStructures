@@ -27,8 +27,7 @@ class TrailSplit:
         """Removes the branch, should just leave the remaining following trail."""
         self.path_top = Trail(None)
         self.path_bottom = Trail(None)
-        # return TrailSeries(self.path_follow.store.mountain, Trail(None))
-        return TrailSeries(self.path_follow.store.mountain, Trail(None))
+        return self.path_follow.store
 
 @dataclass
 class TrailSeries:
@@ -44,19 +43,20 @@ class TrailSeries:
 
     def remove_mountain(self) -> TrailStore:
         """Removes the mountain at the beginning of this series."""
-        raise NotImplementedError()
+        self.mountain = None
+        return self.following
 
     def add_mountain_before(self, mountain: Mountain) -> TrailStore:
         """Adds a mountain in series before the current one."""
-        return TrailSeries(mountain, Trail(TrailSeries(self.mountain, Trail(None))))
+        return TrailSeries(mountain, Trail(TrailSeries(self.mountain, self.following)))
 
     def add_empty_branch_before(self) -> TrailStore:
         """Adds an empty branch, where the current trailstore is now the following path."""
-        return TrailSplit(Trail(None), Trail(None), Trail(TrailSeries(self.mountain, Trail(None))))
+        return TrailSplit(Trail(None), Trail(None), Trail(TrailSeries(self.mountain, self.following)))
 
     def add_mountain_after(self, mountain: Mountain) -> TrailStore:
         """Adds a mountain after the current mountain, but before the following trail."""
-        return TrailSeries(self.mountain, Trail(TrailSeries(mountain, Trail(None))))
+        return TrailSeries(self.mountain, Trail(TrailSeries(mountain, self.following)))
 
     def add_empty_branch_after(self) -> TrailStore:
         """Adds an empty branch after the current mountain, but before the following trail."""
@@ -71,11 +71,11 @@ class Trail:
 
     def add_mountain_before(self, mountain: Mountain) -> Trail:
         """Adds a mountain before everything currently in the trail."""
-        return Trail(TrailSeries(mountain, Trail(None)))
+        return Trail(TrailSeries(mountain, Trail(self.store)))
 
     def add_empty_branch_before(self) -> Trail:
         """Adds an empty branch before everything currently in the trail."""
-        return Trail(TrailSplit(Trail(None), Trail(None), Trail(None)))
+        return Trail(TrailSplit(Trail(None), Trail(None), Trail(self.store)))
 
     def follow_path(self, personality: WalkerPersonality) -> None:
         """Follow a path and add mountains according to a personality."""
