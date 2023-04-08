@@ -5,6 +5,8 @@ from mountain import Mountain
 
 from typing import TYPE_CHECKING, Union
 
+from data_structures.linked_stack import LinkedStack
+
 # Avoid circular imports for typing.
 if TYPE_CHECKING:
     from personality import WalkerPersonality
@@ -44,7 +46,7 @@ class TrailSeries:
     def remove_mountain(self) -> TrailStore:
         """Removes the mountain at the beginning of this series."""
         self.mountain = None
-        return self.following
+        return self.following.store
 
     def add_mountain_before(self, mountain: Mountain) -> TrailStore:
         """Adds a mountain in series before the current one."""
@@ -79,8 +81,27 @@ class Trail:
 
     def follow_path(self, personality: WalkerPersonality) -> None:
         """Follow a path and add mountains according to a personality."""
-        raise NotImplementedError()
-
+        current_store = self.store
+        # following_stack stores path_follow Trail objects
+        following_stack = LinkedStack()
+        while current_store is not None or not following_stack.is_empty():
+            # while loop ends when current_store is None and following_stack is empty
+            if current_store.__class__.__name__ == "TrailSeries":
+                personality.add_mountain(current_store.mountain)
+                current_store = current_store.following.store
+            elif current_store.__class__.__name__ == "TrailSplit":
+                if personality.select_branch(current_store.path_top, current_store.path_bottom):
+                    # top branch selected
+                    following_stack.push(current_store.path_follow)
+                    current_store = current_store.path_top.store
+                else:
+                    # bottom branch selected
+                    following_stack.push(current_store.path_follow)
+                    current_store = current_store.path_bottom.store
+            else:   
+                # current_store is None
+                current_store = following_stack.pop().store
+                
     def collect_all_mountains(self) -> list[Mountain]:
         """Returns a list of all mountains on the trail."""
         raise NotImplementedError()
