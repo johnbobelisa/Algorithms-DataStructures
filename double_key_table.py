@@ -75,7 +75,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         :raises FullError: When a table is full and cannot be inserted.
         """
         index1 = self.hash1(key1)
-        sub_table:LinearProbeTable = LinearProbeTable()
+        sub_table:LinearProbeTable = None
         
         for i in range(self.table_size):
             if self.arrayO[index1] is None:
@@ -90,6 +90,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                 
             elif self.arrayO[index1][0] == key1:
                 sub_table = self.arrayO[index1][1]
+                break
             else:
                 if i == self.table_size-1:
                     raise FullError()
@@ -106,7 +107,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                     else:
                         raise KeyError()
             elif sub_table.array[index2][0] == key2:
-                index2 = index2
+                break
             else:
                 if j == sub_table.table_size-1:
                     raise FullError()
@@ -123,7 +124,22 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         key = k:
             Returns an iterator of all keys in the bottom-hash-table for k.
         """
-        raise NotImplementedError()
+        if key == None:
+            top_lvl_keys = self.keys(None)
+            iter_key = OurIterator(top_lvl_keys)
+            try:
+                item = next(iter_key)
+                yield item
+            except StopIteration:
+                pass
+        else:
+            bot_lvl_keys = self.keys(key)
+            iter_key = OurIterator(bot_lvl_keys)
+            try:
+                item = next(iter_key)      
+                yield item          
+            except StopIteration:
+                pass
 
     def keys(self, key:K1|None=None) -> list[K1]:
         """
@@ -165,7 +181,25 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         key = k:
             Returns an iterator of all values in the bottom-hash-table for k.
         """
-        raise NotImplementedError()
+
+        if key == None:
+            top_lvl_values = self.values(None)
+            iter_val = OurIterator(top_lvl_values)
+            try:
+                item = next(iter_val)
+                yield item
+            except StopIteration:
+                pass    
+              
+        else:
+            bot_lvl_values = self.values(key)
+            iter_val = OurIterator(bot_lvl_values)
+            try:
+                item = next(iter_val)
+                yield item
+            except StopIteration:
+                pass
+            
 
     def values(self, key:K1|None=None) -> list[V]:
         """
@@ -194,6 +228,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                             if item3 is not None:
                                 key3, val = item3
                                 list_of_values.append(val)
+                        break
                                 
         return list_of_values
 
@@ -217,32 +252,38 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         :raises KeyError: when the key doesn't exist.
         """
         index1, index2 = self._linear_probe(key[0], key[1], False)
-        inner_table:LinearProbeTable = self.arrayO[index1][1]
-        return inner_table.array[index2][1] 
+
+        if self.arrayO[index1][0] == key[0]:
+            inner_table:LinearProbeTable = self.arrayO[index1][1]
+            if inner_table.array[index2][0] == key[1]:
+                return inner_table.array[index2][1] 
+        
+        raise KeyError()
 
     def __setitem__(self, key: tuple[K1, K2], data: V) -> None:
         """
         Set an (key, value) pair in our hash table.
         """
 
-        index1, index2 = self._linear_probe(key[0], key[1], True)
+        top_lvl_keys = self.keys(None)
+        bot_lvl_keys = self.keys(key[0])
 
-        if self.arrayO[index1] is None:
-            self.counts += 1
-        inner_table:LinearProbeTable = self.arrayO[index1][1]
+        if key[0] not in top_lvl_keys:
+            self.counts += 1            
+
+        indx1, indx2 = self._linear_probe(key[0], key[1], True)
         
-        inner_table.count += 1
+        inner_table:LinearProbeTable = self.arrayO[indx1][1]
+        if key[1] not in bot_lvl_keys:
+            inner_table.count += 1
 
-        temp_list = list(inner_table.array[index2])
-        temp_list[1] = data
-        inner_table.array[index2] = tuple(temp_list)
-
+        inner_table.array[indx2] = (key[1], data)
+        
         if self.counts > self.table_size / 2:
-            self._rehash()  
+            self._rehash()
         
-        if len(inner_table) > inner_table.table_size / 2:
+        if inner_table.count > inner_table.table_size / 2:
             inner_table._rehash()
-
 
     def __delitem__(self, key: tuple[K1, K2]) -> None:
         """
@@ -251,7 +292,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         :raises KeyError: when the key doesn't exist.
         """
 
-        index1, index2 = self._linear_probe(key[0], key[1], True)
+        index1, index2 = self._linear_probe(key[0], key[1], False)
 
         inner_table:LinearProbeTable = self.arrayO[index1][1]
         inner_table.array[index2] = None
@@ -260,7 +301,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         if inner_table.count == 0:
             self.arrayO[index1] = None
             self.counts -= 1
-    
+
     def _rehash(self) -> None:
         """
         Need to resize table and reinsert all values
@@ -273,7 +314,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         self.size_index_ += 1
         if self.size_index_ == len(self.TABLE_SIZES):
             return
-        self.arrayO = ArrayR([self.TABLE_SIZES[self.size_index_]])
+        self.arrayO = ArrayR(self.TABLE_SIZES[self.size_index_])
         self.counts = 0
 
         for item in old_array:
@@ -306,3 +347,20 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         Not required but may be a good testing tool.
         """
         raise NotImplementedError()
+    
+    def is_full(self) -> bool:
+        return self.counts == self.table_size
+    
+    def is_empty(self) -> bool:
+        return self.counts == 0
+    
+class OurIterator:
+    def __init__(self, iterable):
+        self.iterator = iter(iterable)
+    def __iter__(self):
+        return self
+    def __next__(self):
+        data = next(self.iterator)
+        if data is None:
+            raise StopIteration
+        return data
