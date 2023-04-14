@@ -33,10 +33,10 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             self.TABLE_SIZES = sizes
         
         self.internal_table = LinearProbeTable(internal_sizes)
-
-        self.size_index_ = 0
-        self.arrayO = ArrayR(self.TABLE_SIZES[self.size_index_])
-        self.counts = 0
+        
+        self.size_index_ = 0    # size_index for the outer table
+        self.arrayO = ArrayR(self.TABLE_SIZES[self.size_index_]) # outer hash table
+        self.counts = 0     # count for the outer table
        
 
     def hash1(self, key: K1) -> int:
@@ -77,40 +77,40 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         index1 = self.hash1(key1)
         sub_table:LinearProbeTable = None
         
-        for i in range(self.table_size):
-            if self.arrayO[index1] is None:
+        for i in range(self.table_size):    # self.table_size is the table size of the outer hash table
+            if self.arrayO[index1] is None:     # if inner table does not exist
                 top_lvl_keys = self.keys(None)
-                if top_lvl_keys == None or key1 not in top_lvl_keys:
+                if top_lvl_keys is None or key1 not in top_lvl_keys:
                     if is_insert:
-                        self.arrayO[index1] = (key1, LinearProbeTable(self.internal_table.TABLE_SIZES))
-                        sub_table = self.arrayO[index1][1]
+                        sub_table = LinearProbeTable(self.internal_table.TABLE_SIZES)
+                        self.arrayO[index1] = (key1, sub_table)
                         break
                     else:
-                        raise KeyError()
+                        raise KeyError(key1)
                 
             elif self.arrayO[index1][0] == key1:
                 sub_table = self.arrayO[index1][1]
                 break
             else:
                 if i == self.table_size-1:
-                    raise FullError()
+                    raise FullError("Table is full!")
                 index1 = (index1+1) % self.table_size
         
         index2 = self.hash2(key2, sub_table)
         for j in range(sub_table.table_size):
             if sub_table.array[index2] is None:
                 bot_lvl_keys = self.keys(key1)
-                if bot_lvl_keys == None or key2 not in bot_lvl_keys:
+                if bot_lvl_keys is None or key2 not in bot_lvl_keys:
                     if is_insert:
                         sub_table.array[index2] = (key2, None)
                         break 
                     else:
-                        raise KeyError()
+                        raise KeyError(key2)
             elif sub_table.array[index2][0] == key2:
                 break
             else:
                 if j == sub_table.table_size-1:
-                    raise FullError()
+                    raise FullError("Table is full!")
                 index2 = (index2 + 1) % sub_table.table_size
         
         return index1, index2
@@ -124,7 +124,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         key = k:
             Returns an iterator of all keys in the bottom-hash-table for k.
         """
-        if key == None:
+        if key is None:
             top_lvl_keys = self.keys(None)
             iter_key = OurIterator(top_lvl_keys)
             try:
@@ -149,25 +149,19 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
         list_of_keys = []
 
-        if key == None:
+        if key is None:
             for k1 in self.arrayO:
-                if k1 == None:
-                    continue
-                else:
+                if k1 is not None:
                     key1, value = k1
                     list_of_keys.append(key1)
         else:
             for item in self.arrayO:
-                if item == None:
-                    continue
-                else:
+                if item is not None:
                     ke1, val = item
                     if ke1 == key:
                         inner_table:LinearProbeTable = val
                         for k2 in inner_table.array:
-                            if k2 == None:
-                                continue
-                            else:
+                            if k2 is not None:
                                 key2, data = k2
                                 list_of_keys.append(key2)
         return list_of_keys
@@ -182,7 +176,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             Returns an iterator of all values in the bottom-hash-table for k.
         """
 
-        if key == None:
+        if key is None:
             top_lvl_values = self.values(None)
             iter_val = OurIterator(top_lvl_values)
             try:
@@ -209,11 +203,10 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
         list_of_values = []
 
-        if key == None:
+        if key is None:
             for item in self.arrayO:
                 if item is not None:
                     k1, inner_table = item
-                    inner_table:LinearProbeTable
                     for item1 in inner_table.array:
                         if item1 is not None:
                             key2, value = item1
@@ -320,7 +313,6 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         for item in old_array:
             if item is not None:
                 key1, inner_table = item
-                inner_table: LinearProbeTable
                 for item1 in inner_table.array:
                     if item1 is not None:
                         key2, data = item1
