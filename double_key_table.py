@@ -126,35 +126,27 @@ class DoubleKeyTable(Generic[K1, K2, V]):
             Returns an iterator of all keys in the bottom-hash-table for k.
         """
         if key is None:
-            top_lvl_keys = self.keys(None)
-            iter_key = OurIterator(top_lvl_keys)
-            try:
-                item = next(iter_key)
-                yield item
-            except StopIteration:
-                pass
+            for i in range(self.table_size):  
+                if self.array_outer[i] is not None:     # self.array_outer[i] is (k1, sub_table)
+                    yield self.array_outer[i][0]    # will raise StopIteration automatically
         else:
-            bot_lvl_keys = self.keys(key)
-            iter_key = OurIterator(bot_lvl_keys)
-            try:
-                item = next(iter_key)      
-                yield item          
-            except StopIteration:
-                pass
+            for i in range(self.table_size):  
+                if self.array_outer[i] is not None:     # self.array_outer[i] is (k1, sub_table)
+                    if self.array_outer[i][0] == key:
+                        for k2 in self.array_outer[i][1].keys():    # use keys() from hash_table.py
+                            yield k2    # will raise StopIteration automatically
 
     def keys(self, key:K1|None=None) -> list[K1]:
         """
         key = None: returns all top-level keys in the table.
         key = x: returns all bottom-level keys for top-level key x.
         """
-
         list_of_keys = []
 
         if key is None:
             for i in range(self.table_size):  
                 if self.array_outer[i] is not None:     # self.array_outer[i] is (k1, sub_table)
-                    list_of_keys.append(self.array_outer[i][0])
-                    
+                    list_of_keys.append(self.array_outer[i][0])                    
         else:
             for i in range(self.table_size):  
                 if self.array_outer[i] is not None:     # self.array_outer[i] is (k1, sub_table)
@@ -164,8 +156,6 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         
         return list_of_keys
 
-
-
     def iter_values(self, key:K1|None=None) -> Iterator[V]:
         """
         key = None:
@@ -173,32 +163,25 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         key = k:
             Returns an iterator of all values in the bottom-hash-table for k.
         """
-
         if key is None:
-            top_lvl_values = self.values(None)
-            iter_val = OurIterator(top_lvl_values)
-            try:
-                item = next(iter_val)
-                yield item
-            except StopIteration:
-                pass    
-              
+            for i in range(self.table_size):  
+                if self.array_outer[i] is not None:     # self.array_outer[i] is (k1, sub_table)
+                    inner_table = self.array_outer[i][1]
+                    for value in inner_table.values():     # use values() from hash_table.py
+                        yield value     # will raise StopIteration automatically
         else:
-            bot_lvl_values = self.values(key)
-            iter_val = OurIterator(bot_lvl_values)
-            try:
-                item = next(iter_val)
-                yield item
-            except StopIteration:
-                pass
-            
+            for i in range(self.table_size):  
+                if self.array_outer[i] is not None:     # self.array_outer[i] is (k1, sub_table)
+                    if self.array_outer[i][0] == key:
+                        inner_table = self.array_outer[i][1]
+                        for value in inner_table.values():     # use values() from hash_table.py
+                            yield value     # will raise StopIteration automatically
 
     def values(self, key:K1|None=None) -> list[V]:
         """
         key = None: returns all values in the table.
         key = x: returns all values for top-level key x.
         """
-
         list_of_values = []
 
         if key is None:
@@ -309,7 +292,6 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                         key2, data = item1
                         self[key1, key2] = data
         
-
     @property
     def table_size(self) -> int:
         """
@@ -336,14 +318,4 @@ class DoubleKeyTable(Generic[K1, K2, V]):
     
     def is_empty(self) -> bool:
         return self.count_outer == 0
-    
-class OurIterator:
-    def __init__(self, iterable):
-        self.iterator = iter(iterable)
-    def __iter__(self):
-        return self
-    def __next__(self):
-        data = next(self.iterator)
-        if data is None:
-            raise StopIteration
-        return data
+
