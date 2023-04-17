@@ -214,7 +214,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
 
         inner_table.array[pos2] = (key[1], data)
 
-        if self.outer_table.count > self.table_size / 2:
+        if len(self) > self.table_size / 2:
             self._rehash()
         
         if inner_table.count > inner_table.table_size / 2:
@@ -270,7 +270,7 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         Returns number of elements in the hash table
         """
-        raise NotImplementedError()
+        return self.outer_table.count
 
     def __str__(self) -> str:
         """
