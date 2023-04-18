@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Generic, TypeVar
 
 from data_structures.referential_array import ArrayR
+from data_structures.hash_table import LinearProbeTable
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -21,7 +22,13 @@ class InfiniteHashTable(Generic[K, V]):
     TABLE_SIZE = 27
 
     def __init__(self) -> None:
-        raise NotImplementedError()
+        """
+        Initialise the Hash Table.
+        """
+        self.top_table = ArrayR(self.TABLE_SIZE)
+        self.count = 0
+        self.level = 0  # start at level 0
+        self.current_table = self.top_table
 
     def hash(self, key: K) -> int:
         if self.level < len(key):
@@ -40,7 +47,43 @@ class InfiniteHashTable(Generic[K, V]):
         """
         Set an (key, value) pair in our hash table.
         """
-        raise NotImplementedError()
+        position = self.hash(key)
+        
+        # empty slot, insert (key, value)
+        if self.current_table[position] is None:
+            self.current_table[position] = (key, value)
+            self.count += 1
+            self.level = 0
+            self.current_table = self.top_table
+            return
+        
+        # matching key, update value
+        elif self.current_table[position][0] == key:
+            self.current_table[position] = (key, value)
+            self.level = 0
+            self.current_table = self.top_table
+            return
+        
+        # conflict (key, table) at position
+        elif isinstance(self.current_table[position][1], ArrayR):
+            self.level += 1   
+            self.current_table = self.current_table[position][1]
+            self.__setitem__(key, value)
+        
+        # conflict another (key, value) at position 
+        else:
+            other_key, other_value = self.current_table[position]    # current_table[position] contains (key, value)
+            next_table = ArrayR(self.TABLE_SIZE)    # create another hash table
+            next_table_name = other_key[:self.level + 1] + '*'
+            # change key to k*, ke*, key*, based on the level   
+            # change value to table
+            self.current_table[position] = (next_table_name, next_table)     
+            self.current_table = next_table      # move to next hash table
+            self.level += 1
+            other_position = self.hash(other_key)
+            self.current_table[other_position] = (other_key, other_value)   # reinsert other_key, other value
+            self.__setitem__(key, value)
+            
 
     def __delitem__(self, key: K) -> None:
         """
@@ -51,7 +94,10 @@ class InfiniteHashTable(Generic[K, V]):
         raise NotImplementedError()
 
     def __len__(self):
-        raise NotImplementedError()
+        """
+        Returns number of elements in the hash table
+        """
+        return self.count
 
     def __str__(self) -> str:
         """
@@ -59,7 +105,14 @@ class InfiniteHashTable(Generic[K, V]):
 
         Not required but may be a good testing tool.
         """
-        raise NotImplementedError()
+        while True:
+            for i in range(len(self.current_table)):
+                print(f"Table[{i}] = {self.current_table[i]}") 
+            try:   
+                next_index = int(input("Choose the next table by its index: "))
+                self.current_table = self.current_table[next_index][1]
+            except (ValueError, IndexError):
+                return "Done"
 
     def get_location(self, key):
         """
@@ -81,3 +134,13 @@ class InfiniteHashTable(Generic[K, V]):
             return False
         else:
             return True
+        
+if __name__ == "__main__":
+    ih = InfiniteHashTable()
+    ih["lin"] = 1
+    ih["leg"] = 2
+    ih["linked"] = 4
+    ih["limp"] = 5
+    ih["linger"] = 8
+    print(ih)
+    print(len(ih))
