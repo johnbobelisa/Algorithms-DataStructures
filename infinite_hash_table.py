@@ -35,12 +35,14 @@ class InfiniteHashTable(Generic[K, V]):
             return ord(key[self.level]) % (self.TABLE_SIZE-1)
         return self.TABLE_SIZE-1
     
-    def _infinite_probe(self, key: K, is_insert: bool) -> ArrayR:
+    def _infinite_probe(self, key: K, is_insert: bool, is_delete: bool) -> ArrayR:
         """
         Find the correct table for this key
         Changes self.level to the level the correct table is located.
         """
         current_table = self.top_table
+        previous_table = self.top_table
+        self.level = 0      # reset self.level before probing
         
         while True:
             position = self.hash(key)
@@ -53,11 +55,16 @@ class InfiniteHashTable(Generic[K, V]):
             
             # matching key
             elif current_table[position][0] == key:
-                return current_table
+                if is_delete:
+                    self.level -= 1
+                    return previous_table
+                else:
+                    return current_table
             
             # conflict, (key, table) at position
             elif isinstance(current_table[position][1], ArrayR):
                 self.level += 1  
+                previous_table = current_table      # store current table
                 current_table = current_table[position][1]      # move to next hash table
                 continue
             
@@ -83,32 +90,59 @@ class InfiniteHashTable(Generic[K, V]):
 
         :raises KeyError: when the key doesn't exist.
         """
-        current_table = self._infinite_probe(key, False)
+        current_table = self._infinite_probe(key, False, False)
         position = self.hash(key)
-        self.level = 0      # reset self.level
+        
         return current_table[position][1]
 
     def __setitem__(self, key: K, value: V) -> None:
         """
         Set an (key, value) pair in our hash table.
         """
-        current_table = self._infinite_probe(key, True)
+        current_table = self._infinite_probe(key, True, False)
         position = self.hash(key)
-        self.level = 0      # reset self.level
         
         if current_table[position] is None:   
             self.count += 1     
         
         current_table[position] = (key, value)
     
-
     def __delitem__(self, key: K) -> None:
         """
         Deletes a (key, value) pair in our hash table.
 
         :raises KeyError: when the key doesn't exist.
         """
-        raise NotImplementedError()
+        # Just delete (key, value)
+        current_table = self._infinite_probe(key, False, False)
+        current_position = self.hash(key)
+        current_table[current_position] = None
+        self.count -= 1
+        
+        # Collapsing
+        for _ in range(self.level):
+            # store the (other_key, other_value) if deleting leaves a single pair in current_table
+            other_key, other_value = None, None
+            other_count = 0       # Number of other elements in current_table
+        
+            # Check if current_table needs collapsing
+            for i in range(len(current_table)):
+                if current_table[i] is not None:
+                    other_count += 1
+                    other_key, other_value = current_table[i]
+                # if current_table contains more than one (key, value) 
+                # or contains at least one (key, table)
+                if other_count > 1 or isinstance(other_value, ArrayR):
+                    return    # No need to collapse
+        
+            # If collapsing, set (key, table) in previous_table to (other_key, other_value) from current table
+            previous_table = self._infinite_probe(other_key, False, True)
+            previous_position = self.hash(other_key)
+            previous_table[previous_position] = (other_key, other_value)
+            
+            # Move one level up
+            current_table = previous_table
+            current_position = previous_position
 
     def __len__(self):
         """
@@ -138,13 +172,12 @@ class InfiniteHashTable(Generic[K, V]):
         :raises KeyError: when the key doesn't exist.
         """
         locations = []
-        self._infinite_probe(key, False)
+        self._infinite_probe(key, False, False)
         
         for i in range(self.level + 1):
             self.level = i
             locations.append(self.hash(key))
         
-        self.level = 0      # reset self.level
         return locations
     
     def __contains__(self, key: K) -> bool:
@@ -167,6 +200,7 @@ if __name__ == "__main__":
     ih["linked"] = 4
     ih["limp"] = 5
     ih["linger"] = 8
+    del ih["limp"]
     print(ih)
     print(len(ih))
     print(ih.get_location("linger"))
