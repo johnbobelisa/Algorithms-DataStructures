@@ -5,7 +5,7 @@ from mountain import Mountain
 
 from typing import TYPE_CHECKING, Union
 
-from data_structures.linked_stack import LinkedStack
+from data_structures.linked_stack import LinkedStack, Node
 
 # Avoid circular imports for typing.
 if TYPE_CHECKING:
@@ -193,7 +193,27 @@ class Trail:
                 
     def collect_all_mountains(self) -> list[Mountain]:
         """Returns a list of all mountains on the trail."""
-        raise NotImplementedError()
+        all_mountains = []
+        linked_stack = LinkedStack()
+
+        if self.store is not None:
+            linked_stack.push(self.store)
+
+        while not linked_stack.is_empty():
+            current_trail = linked_stack.pop()
+
+            if isinstance(current_trail, TrailSplit):
+                linked_stack.push(current_trail.path_top.store) 
+                linked_stack.push(current_trail.path_bottom.store)
+                linked_stack.push(current_trail.path_follow.store)            
+
+            elif isinstance(current_trail, TrailSeries):
+                if current_trail.mountain is not None:
+                    all_mountains.append(current_trail.mountain)
+                linked_stack.push(current_trail.following.store)
+    
+        return all_mountains
+
 
     def length_k_paths(self, k) -> list[list[Mountain]]: # Input to this should not exceed k > 50, at most 5 branches.
         """
