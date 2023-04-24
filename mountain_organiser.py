@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from mountain import Mountain
-from algorithms import mergesort
+from algorithms.mergesort import *
 
 class MountainOrganiser:
     
@@ -18,7 +18,7 @@ class MountainOrganiser:
             m:Mountain
             mountain_lengths.append((m.length, m.name))
             
-        sorted_lst = mergesort.mergesort(mountain_lengths)
+        sorted_lst = mergesort(mountain_lengths)
         
         for rank, values in enumerate(sorted_lst):
             if mountain.name == values[1]:
