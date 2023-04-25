@@ -96,23 +96,9 @@ class DoubleKeyTable(Generic[K1, K2, V]):
                 if i == self.table_size - 1:
                     raise FullError("Table is full!")
                 index1 = (index1 + 1) % self.table_size
-        
-        index2 = self.hash2(key2, sub_table)
-        for j in range(sub_table.table_size):
-            if sub_table.array[index2] is None:     # if empty
-                bot_lvl_keys = self.keys(key1)
-                if bot_lvl_keys is None or key2 not in bot_lvl_keys:
-                    if is_insert:
-                        sub_table.array[index2] = (key2, None)
-                        break 
-                    else:
-                        raise KeyError(key2) 
-            elif sub_table.array[index2][0] == key2:    # elif key2 is found at index2
-                break
-            else:
-                if j == sub_table.table_size - 1:
-                    raise FullError("Table is full!")
-                index2 = (index2 + 1) % sub_table.table_size
+
+        sub_table.hash = lambda k: self.hash2(k, sub_table)
+        index2 = sub_table._linear_probe(key2, is_insert)
         
         return index1, index2
 
