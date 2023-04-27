@@ -80,29 +80,29 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         for i in range(self.table_size):    # self.table_size is the table size of the outer hash table
             # self.array_outer[index1] contains (k1, sub_table)
             if self.array_outer[index1] is None:     # if empty
-                top_lvl_keys = self.keys(None)
-                if top_lvl_keys is None or key1 not in top_lvl_keys:
-                    if is_insert:
-                        sub_table = LinearProbeTable(self.internal_table.TABLE_SIZES)
-                        self.array_outer[index1] = (key1, sub_table)
-                        break
-                    else:
-                        raise KeyError(key1)
+                if is_insert:
+                    sub_table = LinearProbeTable(self.internal_table.TABLE_SIZES)
+                    self.array_outer[index1] = (key1, sub_table)
+                    self.count_outer += 1
+                    break
+                else:
+                    raise KeyError(key1)
             # self.array_outer[index1] contains (k1, sub_table)  
             elif self.array_outer[index1][0] == key1:   # elif key1 is found at index1
                 sub_table = self.array_outer[index1][1]
                 break
             else:
-                if i == self.table_size - 1:
-                    raise FullError("Table is full!")
+                if i == self.table_size - 1:    # looped to the end
+                    if is_insert:
+                        raise FullError("Table is full!")
+                    else:
+                        raise KeyError(key1)
                 index1 = (index1 + 1) % self.table_size
 
         sub_table.hash = lambda k: self.hash2(k, sub_table)
         index2 = sub_table._linear_probe(key2, is_insert)
         
         return index1, index2
-
-            
 
     def iter_keys(self, key:K1|None=None) -> Iterator[K1|K2]:
         """
@@ -217,20 +217,16 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         """
         Set an (key, value) pair in our hash table.
         """
-
-        top_lvl_keys = self.keys(None)
-        bot_lvl_keys = self.keys(key[0])
-
-        if key[0] not in top_lvl_keys:
-            self.count_outer += 1            
-
-        indx1, indx2 = self._linear_probe(key[0], key[1], True)
+        # will create (k1, sub_table) if self.array_outer[index1] is None 
+        # and increase self.count_outer automatically
+        index1, index2 = self._linear_probe(key[0], key[1], True) 
         
-        inner_table:LinearProbeTable = self.array_outer[indx1][1]
-        if key[1] not in bot_lvl_keys:
+        inner_table:LinearProbeTable = self.array_outer[index1][1]
+        
+        if inner_table.array[index2] is None:
             inner_table.count += 1
-
-        inner_table.array[indx2] = (key[1], data)
+        
+        inner_table.array[index2] = (key[1], data)
         
         if self.count_outer > self.table_size / 2:
             self._rehash()
