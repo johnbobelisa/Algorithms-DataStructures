@@ -24,6 +24,10 @@ class InfiniteHashTable(Generic[K, V]):
     def __init__(self) -> None:
         """
         Initialise the Hash Table.
+        
+        Complexity:
+        - O(TABLE_SIZE): due to ArrayR creation, where TABLE_SIZE is a constant.
+        - best case = worst case
         """
         self.top_table = ArrayR(self.TABLE_SIZE)
         self.count = 0
@@ -31,6 +35,11 @@ class InfiniteHashTable(Generic[K, V]):
         self.current_table = self.top_table
 
     def hash(self, key: K) -> int:
+        """
+        Complexity:
+        - O(comp): where comp is the complexity of integer comparison.
+        - best case = worst case
+        """
         if self.level < len(key):
             return ord(key[self.level]) % (self.TABLE_SIZE-1)
         return self.TABLE_SIZE-1
@@ -39,10 +48,22 @@ class InfiniteHashTable(Generic[K, V]):
         """
         Find the correct table for this key
         Changes self.level to the level the correct table is located.
+        
+        Returns:
+        - table: an ArrayR object representing an individual hash table.
+        
+        Complexity:
+        - Best case: O(comp): key is located at the top hash table.
+        - Worst case: O(n * comp): key is located at the highest level of the hash table hierarchy.
+        where comp is the complexity of string comparison 
+        and n is the number of levels of the hash table hierarchy (different from self.level which starts at 0).
+        
+        (1st level)    (2nd level)
+        Table L0 -----> Table L1
         """
         current_table = self.top_table
         previous_table = self.top_table
-        self.level = 0      # reset self.level before probing
+        self.level = 0      # reset self.level before probing again
         
         while True:
             position = self.hash(key)
@@ -89,6 +110,13 @@ class InfiniteHashTable(Generic[K, V]):
         Get the value at a certain key
 
         :raises KeyError: when the key doesn't exist.
+        
+        Complexity:
+        See _infinite_probe()
+        - Best case: O(comp): key is located at the top hash table.
+        - Worst case: O(n * comp): key is located at the highest level of the hash table hierarchy.
+        where comp is the complexity of string comparison 
+        and n is the number of levels of the hash table hierarchy (different from self.level which starts at 0).
         """
         current_table = self._infinite_probe(key, False, False)
         position = self.hash(key)
@@ -98,6 +126,13 @@ class InfiniteHashTable(Generic[K, V]):
     def __setitem__(self, key: K, value: V) -> None:
         """
         Set an (key, value) pair in our hash table.
+        
+        Complexity:
+        See _infinite_probe()
+        - Best case: O(comp): key is located at the top hash table.
+        - Worst case: O(n * comp): key is located at the highest level of the hash table hierarchy.
+        where comp is the complexity of string comparison 
+        and n is the number of levels of the hash table hierarchy (different from self.level which starts at 0).
         """
         current_table = self._infinite_probe(key, True, False)
         position = self.hash(key)
@@ -112,8 +147,27 @@ class InfiniteHashTable(Generic[K, V]):
         Deletes a (key, value) pair in our hash table.
 
         :raises KeyError: when the key doesn't exist.
+        
+        Complexity:
+        See _infinite_probe()
+        - Best case: O(comp): key is located at the top hash table, no collapsing required.
+        where comp is the complexity of string comparison.
+        - Worst case: O(n * comp): key is located at the highest level of the hash table hierarchy, 
+        where n is the number of levels of the hash table hierarchy (different from self.level which starts at 0).
+        
+        
+        The outer for loop runs for 1 times in the best case.
+        The outer for loop runs for (n - 1) times in the worst case. 
+        
+        The inner for loop runs for TABLE_SIZE times unless returned early.
+        
+        Thus, the best case complexity of the nested loops is O(1 * TABLE_SIZE) = O(1)
+        and the overall best case complexity is O(comp + 1) = O(comp) 
+        
+        Thus, the worst case complexity of the nested loops is O((n - 1) * TABLE_SIZE) = O(n)
+        and the overall worst case complexity is O(n * comp + n) = O(n * comp)  
         """
-        # Just delete (key, value)
+        # Delete (key, value) by setting it to None
         current_table = self._infinite_probe(key, False, False)
         current_position = self.hash(key)
         current_table[current_position] = None
@@ -147,6 +201,10 @@ class InfiniteHashTable(Generic[K, V]):
     def __len__(self):
         """
         Returns number of elements in the hash table
+        
+        Complexity:
+        - O(1): return statement is a constant time operation.
+        - best case = worst case
         """
         return self.count
 
@@ -170,6 +228,23 @@ class InfiniteHashTable(Generic[K, V]):
         Get the sequence of positions required to access this key.
 
         :raises KeyError: when the key doesn't exist.
+        
+        Complexity:
+        See _infinite_probe()
+        - Best case: O(comp): key is located at the top hash table.
+        - Worst case: O(n * comp): key is located at the highest level of the hash table hierarchy.
+        where comp is the complexity of string comparison 
+        and n is the number of levels of the hash table hierarchy (different from self.level which starts at 0).
+        
+        (1st level)    (2nd level)
+        Table L0 -----> Table L1
+        
+        
+        The for loop runs for 1 time in the best case. 
+        Thus, overall best case complexity is O(comp + 1) = O(comp)
+        
+        The for loop runs for n times in the worst case. 
+        Thus, overall worst case compelexity O(n * comp + n) = O(n * comp)
         """
         locations = []
         self._infinite_probe(key, False, False)
