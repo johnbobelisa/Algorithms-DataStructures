@@ -250,6 +250,19 @@ class DoubleKeyTable(Generic[K1, K2, V]):
         if inner_table.count == 0:
             self.array_outer[index1] = None
             self.count_outer -= 1
+        
+        index1 = (index1+1) % self.table_size
+        while self.array_outer[index1] is not None:
+            key1, inner_tabl = self.array_outer[index1]
+            self.array_outer[index1] = None
+            while inner_tabl.array[index2] is not None:
+                key2, data = inner_tabl.array[index2]
+                self[key1,key2] = data
+                index2 = (index2+1) % inner_tabl.table_size
+            index1 = (index1+1) % self.table_size
+
+
+        
 
     def _rehash(self) -> None:
         """
