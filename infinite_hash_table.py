@@ -3,6 +3,7 @@ from typing import Generic, TypeVar
 
 from data_structures.referential_array import ArrayR
 from data_structures.hash_table import LinearProbeTable
+from mountain import Mountain
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -56,16 +57,13 @@ class InfiniteHashTable(Generic[K, V]):
         - Best case: O(comp): key is located at the top hash table.
         - Worst case: O(n * comp): key is located at the highest level of the hash table hierarchy.
         where comp is the complexity of string comparison 
-        and n is the number of levels of the hash table hierarchy (different from self.level which starts at 0).
-        
-        (1st level)    (2nd level)
-        Table L0 -----> Table L1
+        and n is the length of key
         """
         current_table = self.top_table
         previous_table = self.top_table
         self.level = 0      # reset self.level before probing again
         
-        while True:
+        for _ in range(len(key) + 1):
             position = self.hash(key)
             
             if current_table[position] is None:
@@ -116,7 +114,7 @@ class InfiniteHashTable(Generic[K, V]):
         - Best case: O(comp): key is located at the top hash table.
         - Worst case: O(n * comp): key is located at the highest level of the hash table hierarchy.
         where comp is the complexity of string comparison 
-        and n is the number of levels of the hash table hierarchy (different from self.level which starts at 0).
+        and n is the length of key.
         """
         current_table = self._infinite_probe(key, False, False)
         position = self.hash(key)
@@ -132,7 +130,7 @@ class InfiniteHashTable(Generic[K, V]):
         - Best case: O(comp): key is located at the top hash table.
         - Worst case: O(n * comp): key is located at the highest level of the hash table hierarchy.
         where comp is the complexity of string comparison 
-        and n is the number of levels of the hash table hierarchy (different from self.level which starts at 0).
+        and n is the length of key.
         """
         current_table = self._infinite_probe(key, True, False)
         position = self.hash(key)
@@ -150,22 +148,23 @@ class InfiniteHashTable(Generic[K, V]):
         
         Complexity:
         See _infinite_probe()
-        - Best case: O(comp): key is located at the top hash table, no collapsing required.
+        Best case: O(comp): key is located at the top hash table, no collapsing required.
         where comp is the complexity of string comparison.
-        - Worst case: O(n * comp): key is located at the highest level of the hash table hierarchy, 
-        where n is the number of levels of the hash table hierarchy (different from self.level which starts at 0).
+        Worst case: O(n * comp): key is located at the highest level of the hash table hierarchy, 
+        and n is the length of key.
         
+        The outer for loop runs for 0 times in the best case.
+        The outer for loop runs for self.level - 1 times in the worst case. 
         
-        The outer for loop runs for 1 times in the best case.
-        The outer for loop runs for (n - 1) times in the worst case. 
+        The inner for loop runs for 2 times in the best case.
+        The inner for loop runs for TABLE_SIZE in the worst case.
         
-        The inner for loop runs for TABLE_SIZE times unless returned early.
+        Thus, the best case complexity of the nested loops is O(1).
+        - and the overall best case complexity is O(comp + 1) = O(comp) 
         
-        Thus, the best case complexity of the nested loops is O(1 * TABLE_SIZE) = O(1)
-        and the overall best case complexity is O(comp + 1) = O(comp) 
-        
-        Thus, the worst case complexity of the nested loops is O((n - 1) * TABLE_SIZE) = O(n)
-        and the overall worst case complexity is O(n * comp + n) = O(n * comp)  
+        Thus, the worst case complexity of the nested loops is O(p * q), 
+        where p is self.level and q is TABLESIZE
+        - and the overall worst case complexity is O((n * comp) + (p * q)) 
         """
         # Delete (key, value) by setting it to None
         current_table = self._infinite_probe(key, False, False)
@@ -231,20 +230,16 @@ class InfiniteHashTable(Generic[K, V]):
         
         Complexity:
         See _infinite_probe()
-        - Best case: O(comp): key is located at the top hash table.
-        - Worst case: O(n * comp): key is located at the highest level of the hash table hierarchy.
+        Best case: O(comp): key is located at the top hash table.
+        Worst case: O(n * comp): key is located at the highest level of the hash table hierarchy.
         where comp is the complexity of string comparison 
-        and n is the number of levels of the hash table hierarchy (different from self.level which starts at 0).
-        
-        (1st level)    (2nd level)
-        Table L0 -----> Table L1
-        
+        and n is the length of key.
         
         The for loop runs for 1 time in the best case. 
-        Thus, overall best case complexity is O(comp + 1) = O(comp)
+        - Thus, overall best case complexity is O(comp + 1) = O(comp)
         
-        The for loop runs for n times in the worst case. 
-        Thus, overall worst case compelexity O(n * comp + n) = O(n * comp)
+        The for loop runs for self.level + 1 times in the worst case. 
+        - Thus, overall worst case compelexity O(n * comp + p), where p is self.level.
         """
         locations = []
         self._infinite_probe(key, False, False)
@@ -270,12 +265,39 @@ class InfiniteHashTable(Generic[K, V]):
         
 if __name__ == "__main__":
     ih = InfiniteHashTable()
+    # ih["lin"] = 1
+    # ih["leg"] = 2
+    # ih["linked"] = 4
+    # ih["limp"] = 5
+    # ih["linger"] = 8
+    # del ih["limp"]
+    # m1 = Mountain("m1", 2, 2)
+    # m2 = Mountain("m2", 2, 9)
+    # m3 = Mountain("m3", 3, 6)
+    # m4 = Mountain("m4", 3, 1)
+    # ih[m1.difficulty_level * "e" + m1.name] = m1
+    # ih[m2.difficulty_level * "e" + m2.name] = m2
+    # ih[m3.difficulty_level * "e" + m3.name] = m3
+    # ih[m4.difficulty_level * "e" + m4.name] = m4
+    # print(ih)
+    # print(len(ih))
+    # print(ih["ee*"])
+    
+    ih = InfiniteHashTable()
     ih["lin"] = 1
     ih["leg"] = 2
+    ih["mine"] = 3
     ih["linked"] = 4
     ih["limp"] = 5
+    ih["mining"] = 6
+    ih["jake"] = 7
     ih["linger"] = 8
+
     del ih["limp"]
-    print(ih)
-    print(len(ih))
-    print(ih.get_location("linger"))
+    del ih["mine"]
+    del ih["mining"]
+    del ih["jake"]
+    del ih["leg"]
+    del ih["linger"]
+    # print(ih)
+    del ih["lin"]
