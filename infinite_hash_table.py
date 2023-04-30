@@ -26,7 +26,7 @@ class InfiniteHashTable(Generic[K, V]):
         Initialise the Hash Table.
         
         Complexity:
-        - O(TABLE_SIZE): due to ArrayR creation, where TABLE_SIZE is a constant.
+        - O(n): due to ArrayR creation, where n is TABLE_SIZE.
         - best case = worst case
         """
         self.top_table = ArrayR(self.TABLE_SIZE)
