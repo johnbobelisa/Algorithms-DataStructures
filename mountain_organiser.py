@@ -12,9 +12,16 @@ class MountainOrganiser:
         """
         Finds the rank of the provided mountain given all mountains included so far.
         Raises KeyError if this mountain hasn't been added yet.
+        
+        Complexity:
+        See binary_search 
+        - Best case: O(1)
+        - Worst case: O(log n)
+        where n is the total number of mountains included so far 
+        and assuming integer comparison is O(1).
         """ 
         mountain_rank = binary_search(self.organiser_list, mountain)
-        if mountain_rank == -1:
+        if mountain_rank == -1:     # O(1)
             raise KeyError(mountain)
         else:
             return mountain_rank
@@ -22,14 +29,22 @@ class MountainOrganiser:
     def add_mountains(self, mountains: list[Mountain]) -> None:
         """
         Adds a list of mountains to the organiser
+        
+        Complexity:
+        See binary_search 
+        - O(m * log(m) + n): where m is the length of the input list and
+        n is the total number of mountains included so far.
+        - best case = worst case (no condition in the while loop ends it early)
         """
-        new_mountains_sorted = mergesort(mountains)
+        new_mountains_sorted = mergesort(mountains)     # O(m * log(m))
         
         all_mountains_sorted = []   # new list to store all the mountains sorted
         
         index_a = 0     # index for self.organiser_list
         index_b = 0     # index for new_mountains_sorted
         
+        # O(n): as n will keep getting bigger as more mountains are added,
+        # where n is the total number of mountains included so far.
         while index_a < len(self.organiser_list) and index_b < len(new_mountains_sorted):
             if self.organiser_list[index_a] < new_mountains_sorted[index_b]:
                 all_mountains_sorted.append(self.organiser_list[index_a])
