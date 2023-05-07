@@ -18,9 +18,8 @@ class MountainOrganiser:
         - Best case: O(1)
         - Worst case: O(log n)
         where n is the total number of mountains included so far 
-        and assuming integer comparison is O(1).
         """ 
-        mountain_rank = binary_search(self.organiser_list, mountain)
+        mountain_rank = binary_search(self.organiser_list, mountain)    # O(log n)
         if mountain_rank == -1:     # O(1)
             raise KeyError(mountain)
         else:
