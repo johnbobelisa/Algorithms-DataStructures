@@ -5,7 +5,7 @@ from mountain import Mountain
 
 from typing import TYPE_CHECKING, Union
 
-from data_structures.linked_stack import LinkedStack, Node
+from data_structures.linked_stack import LinkedStack
 
 # Avoid circular imports for typing.
 if TYPE_CHECKING:
@@ -213,13 +213,28 @@ class Trail:
                 linked_stack.push(current_trail.following.store)
     
         return all_mountains
+    
+    def length_k_paths(self, k: int) -> list[list[Mountain]]:
+        paths = []
 
+        def check_branch(store:TrailStore, current_path:list):
+            if store is None:
+                return
 
-    def length_k_paths(self, k) -> list[list[Mountain]]: # Input to this should not exceed k > 50, at most 5 branches.
-        """
-        Returns a list of all paths of containing exactly k mountains.
-        Paths are represented as lists of mountains.
-
-        Paths are unique if they take a different branch, even if this results in the same set of mountains.
-        """
-        raise NotImplementedError()
+            if isinstance(store, TrailSeries):
+                if store.following.store is not None:
+                    check_branch(store.following.store, current_path)
+                if store.mountain is not None:
+                    current_path.append(store.mountain)
+                if len(current_path) == k:
+                    reversed_list = current_path[::-1]
+                    paths.append(reversed_list)
+            
+            if isinstance(store, TrailSplit):
+                check_branch(store.path_follow.store,current_path)
+                check_branch(store.path_bottom.store, current_path.copy())
+                check_branch(store.path_top.store, current_path)
+           
+        check_branch(self.store, [])
+        return paths
+    
