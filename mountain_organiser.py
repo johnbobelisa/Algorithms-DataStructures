@@ -3,8 +3,9 @@ from __future__ import annotations
 from mountain import Mountain
 from algorithms.mergesort import mergesort
 from algorithms.binary_search import binary_search
-class MountainOrganiser:
 
+class MountainOrganiser:
+    
     def __init__(self) -> None:
         self.organiser_list = []
 

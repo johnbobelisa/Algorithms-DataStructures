@@ -193,13 +193,48 @@ class Trail:
                 
     def collect_all_mountains(self) -> list[Mountain]:
         """Returns a list of all mountains on the trail."""
-        raise NotImplementedError()
+        all_mountains = []
+        linked_stack = LinkedStack()
 
-    def length_k_paths(self, k) -> list[list[Mountain]]: # Input to this should not exceed k > 50, at most 5 branches.
-        """
-        Returns a list of all paths of containing exactly k mountains.
-        Paths are represented as lists of mountains.
+        if self.store is not None:
+            linked_stack.push(self.store)
 
-        Paths are unique if they take a different branch, even if this results in the same set of mountains.
-        """
-        raise NotImplementedError()
+        while not linked_stack.is_empty():
+            current_trail = linked_stack.pop()
+
+            if isinstance(current_trail, TrailSplit):
+                linked_stack.push(current_trail.path_top.store) 
+                linked_stack.push(current_trail.path_bottom.store)
+                linked_stack.push(current_trail.path_follow.store)            
+
+            elif isinstance(current_trail, TrailSeries):
+                if current_trail.mountain is not None:
+                    all_mountains.append(current_trail.mountain)
+                linked_stack.push(current_trail.following.store)
+    
+        return all_mountains
+    
+    def length_k_paths(self, k: int) -> list[list[Mountain]]:
+        paths = []
+
+        def check_branch(store:TrailStore, current_path:list):
+            if store is None:
+                return
+
+            if isinstance(store, TrailSeries):
+                if store.following.store is not None:
+                    check_branch(store.following.store, current_path)
+                if store.mountain is not None:
+                    current_path.append(store.mountain)
+                if len(current_path) == k:
+                    reversed_list = current_path[::-1]
+                    paths.append(reversed_list)
+            
+            if isinstance(store, TrailSplit):
+                check_branch(store.path_follow.store,current_path)
+                check_branch(store.path_bottom.store, current_path.copy())
+                check_branch(store.path_top.store, current_path)
+           
+        check_branch(self.store, [])
+        return paths
+    
