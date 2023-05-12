@@ -24,7 +24,10 @@ def _binary_search_aux(l: list[T], item: T, lo: int, hi: int) -> int:
     hi: largest index where the return value could be.
     """
     if lo == hi:
-        return lo
+        if l[lo] == item:
+            return lo
+        else:
+            return -1
     mid = (hi + lo) // 2
     if l[mid] > item:
         # Item would be before mid
